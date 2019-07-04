@@ -108,22 +108,26 @@ class UserAddSpreadsheet(Resource):
     def post(self):
         data = parser_b.parse_args()
         
-        if UserAccountInfoModel.find_by_username(data['username']):
-            return {'message': 'User {} already has a spreadsheet'.format(data['username'])}
+        if UserModel.find_by_username(data['username']):
+            if UserAccountInfoModel.find_by_username(data['username']):
+                return {'message': 'User {} already has a spreadsheet'.format(data['username'])}
+
+            new_accountinfo = UserAccountInfoModel(
+                username = data['username'],
+                spreadsheet = data['spreadsheet']
+            )
+
+            try:
+                new_accountinfo.save_to_db()
+                return {
+                    'message': 'Spreadsheet {} was added'.format(data['username']),
+                    'spreadsheet': data['spreadsheet']
+                    }
+            except:
+                return {'message': 'Something went wrong'}, 500
         
-        new_accountinfo = UserAccountInfoModel(
-            username = data['username'],
-            spreadsheet = data['spreadsheet']
-        )
-        
-        try:
-            new_accountinfo.save_to_db()
-            return {
-                'message': 'Spreadsheet {} was added'.format(data['username']),
-                'spreadsheet': data['spreadsheet']
-                }
-        except:
-            return {'message': 'Something went wrong'}, 500
+        else:
+            return {'message': 'This user doesnt exist'}
 
 
 class AllSpreadsheets(Resource):
