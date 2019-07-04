@@ -61,6 +61,7 @@ class UserAccountInfoModel(db.Model):
     __tablename__ = 'accountinfo'
     username = db.Column(db.String(255), db.ForeignKey('users.username'), primary_key = True)
     spreadsheet = db.Column(db.String(255), nullable = True)
+    model = db.Column(db.String(255), nullable = True)
 
     @classmethod
     def find_by_username(cls, username):
@@ -71,7 +72,8 @@ class UserAccountInfoModel(db.Model):
         def to_json(x):
             return {
                 'username': x.username,
-                'spreadsheet': x.spreadsheet
+                'spreadsheet': x.spreadsheet,
+                'model' : x.model
             }
         return {'accountinfo': list(map(lambda x: to_json(x), UserAccountInfoModel.query.all()))}
     
@@ -90,7 +92,14 @@ class UserAccountInfoModel(db.Model):
         user.spreadsheet = spreadsheet
         db.session.commit()
 
+    @classmethod
+    def add_model(cls, username, model):
+        user = UserAccountInfoModel.query.filter_by(username=username).first()
+        user.model = model
+        db.session.commit()
+
+    @classmethod
     def save_to_db(self):
         db.session.add(self)
         db.session.commit()
-    
+

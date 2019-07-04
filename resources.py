@@ -153,3 +153,24 @@ class AllSpreadsheets(Resource):
     
     def delete(self):
         return UserAccountInfoModel.delete_all()
+
+parser_c = reqparse.RequestParser()
+parser_c.add_argument('username', help = 'This field cannot be blank', required = True)
+parser_c.add_argument('model', help = 'This field cannot be blank', required = True)
+
+class UserAddModel(Resource):
+    def post(self):
+        data = parser_c.parse_args()
+
+        if UserAccountInfoModel.find_by_username(data['username']):
+            try:
+                UserAccountInfoModel.add_model(data['username'], data['model'])
+                return {
+                    'message': 'Model {} was added'.format(data['username']),
+                    'model': data['model']
+                    }
+            except:
+                return {'message': 'Something went wrong'}, 500
+        
+        else:
+            return {'message': 'This user doesnt exist'}
