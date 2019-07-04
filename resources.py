@@ -129,6 +129,23 @@ class UserAddSpreadsheet(Resource):
         else:
             return {'message': 'This user doesnt exist'}
 
+class UserChangeSpreadsheet(Resource):
+    @jwt_required
+    def post(self):
+        data = parser_b.parse_args()
+        
+        if UserAccountInfoModel.find_by_username(data['username']):
+            try:
+                UserAccountInfoModel.change_spreadsheet(data['username'], data['spreadsheet'])
+                return {
+                    'message': 'Spreadsheet {} was changed'.format(data['username']),
+                    'spreadsheet': data['spreadsheet']
+                    }
+            except:
+                return {'message': 'Something went wrong'}, 500
+        
+        else:
+            return {'message': 'This user doesnt exist'}
 
 class AllSpreadsheets(Resource):
     def get(self):

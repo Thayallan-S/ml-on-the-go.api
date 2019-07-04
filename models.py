@@ -84,6 +84,11 @@ class UserAccountInfoModel(db.Model):
         except:
             return {'message': 'Something went wrong'}
     
+    @classmethod
+    def change_spreadsheet(cls, username, spreadsheet):
+        user = UserAccountInfoModel.query.filter_by(username=username).first()
+        user.spreadsheet = spreadsheet
+        db.session.commit()
 
     def save_to_db(self):
         db.session.add(self)
