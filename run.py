@@ -2,6 +2,7 @@ from flask import Flask
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 api = Api(app)
@@ -11,6 +12,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'some-secret-string'
 
 db = SQLAlchemy(app)
+
+migrate = Migrate(app, db)
 
 @app.before_first_request
 def create_tables():
@@ -36,3 +39,5 @@ api.add_resource(resources.UserLogoutRefresh, '/logout/refresh')
 api.add_resource(resources.TokenRefresh, '/token/refresh')
 api.add_resource(resources.AllUsers, '/users')
 api.add_resource(resources.SecretResource, '/secret')
+api.add_resource(resources.AllSpreadsheets, '/spreadsheets')
+api.add_resource(resources.UserAddSpreadsheet, '/addsheet')
