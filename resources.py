@@ -1,6 +1,7 @@
 from flask_restful import Resource, reqparse
 from models import UserModel, RevokedTokenModel, UserAccountInfoModel
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
+import requests
 
 parser = reqparse.RequestParser()
 parser.add_argument('username', help = 'This field cannot be blank', required = True)
@@ -174,3 +175,33 @@ class UserAddModel(Resource):
         
         else:
             return {'message': 'This user doesnt exist'}
+
+parser_d = reqparse.RequestParser()
+parser_d.add_argument('username', help = 'This field cannot be blank', required = True)
+
+class UserTrainModel(Resource):
+    def post(self):
+        data = parser_d.parse_args()
+
+        spreadsheet = UserAccountInfoModel.find_spreadsheet_by_username(data['username'])
+
+        if UserAccountInfoModel.find_by_username(data['username']):
+            try:
+                url = 'http://localhost:3000/trainmymodel'
+
+                datas = {
+                    'username': data['username'],
+                    'spreadsheet': spreadsheet
+                }
+
+                response = requests.post(url, data=datas)
+
+                return {'message': response.text}
+            
+            except:
+                return {'message': 'Something went wrong'}, 500
+        
+        else:
+            return {'message': 'User doesnt exist'}
+
+

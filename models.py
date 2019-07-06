@@ -68,6 +68,10 @@ class UserAccountInfoModel(db.Model):
         return cls.query.filter_by(username = username).first()
 
     @classmethod
+    def find_spreadsheet_by_username(cls, username):
+          return cls.query.filter_by(username = username).first().spreadsheet
+
+    @classmethod
     def return_all(cls):
         def to_json(x):
             return {
