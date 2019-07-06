@@ -61,6 +61,7 @@ class UserAccountInfoModel(db.Model):
     __tablename__ = 'accountinfo'
     username = db.Column(db.String(255), db.ForeignKey('users.username'), primary_key = True)
     spreadsheet = db.Column(db.String(255), nullable = True)
+    spreadsheet_target = db.Column(db.String(255), nullable = True)
     model = db.Column(db.String(255), nullable = True)
 
     @classmethod
@@ -69,7 +70,11 @@ class UserAccountInfoModel(db.Model):
 
     @classmethod
     def find_spreadsheet_by_username(cls, username):
-          return cls.query.filter_by(username = username).first().spreadsheet
+        return cls.query.filter_by(username = username).first().spreadsheet
+
+    @classmethod
+    def find_target_by_username(cls, username):
+        return cls.query.filter_by(username = username).first().spreadsheet_target
 
     @classmethod
     def return_all(cls):
@@ -89,6 +94,12 @@ class UserAccountInfoModel(db.Model):
             return {'message': '{} row(s) deleted'.format(num_rows_deleted)}
         except:
             return {'message': 'Something went wrong'}
+
+    @classmethod
+    def add_target(cls, username, spreadsheet_target):
+        user = UserAccountInfoModel.query.filter_by(username=username).first()
+        user.spreadsheet_target = spreadsheet_target
+        db.session.commit()
     
     @classmethod
     def change_spreadsheet(cls, username, spreadsheet):

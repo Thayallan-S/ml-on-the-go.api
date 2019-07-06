@@ -113,6 +113,8 @@ class UserAddSpreadsheet(Resource):
             if UserAccountInfoModel.find_by_username(data['username']):
                 return {'message': 'User {} already has a spreadsheet'.format(data['username'])}
 
+            
+
             new_accountinfo = UserAccountInfoModel(
                 username = data['username'],
                 spreadsheet = data['spreadsheet']
@@ -155,27 +157,6 @@ class AllSpreadsheets(Resource):
     def delete(self):
         return UserAccountInfoModel.delete_all()
 
-parser_c = reqparse.RequestParser()
-parser_c.add_argument('username', help = 'This field cannot be blank', required = True)
-parser_c.add_argument('model', help = 'This field cannot be blank', required = True)
-
-class UserAddModel(Resource):
-    def post(self):
-        data = parser_c.parse_args()
-
-        if UserAccountInfoModel.find_by_username(data['username']):
-            try:
-                UserAccountInfoModel.add_model(data['username'], data['model'])
-                return {
-                    'message': 'Model {} was added'.format(data['username']),
-                    'model': data['model']
-                    }
-            except:
-                return {'message': 'Something went wrong'}, 500
-        
-        else:
-            return {'message': 'This user doesnt exist'}
-
 parser_d = reqparse.RequestParser()
 parser_d.add_argument('username', help = 'This field cannot be blank', required = True)
 
@@ -184,17 +165,22 @@ class UserTrainModel(Resource):
         data = parser_d.parse_args()
 
         spreadsheet = UserAccountInfoModel.find_spreadsheet_by_username(data['username'])
+        spreadsheet_target = UserAccountInfoModel.find_target_by_username(data['username'])
 
         if UserAccountInfoModel.find_by_username(data['username']):
             try:
-                url = 'http://localhost:3000/trainmymodel'
+                url = 'http://localhost:3000/linearregression'
 
                 datas = {
                     'username': data['username'],
-                    'spreadsheet': spreadsheet
+                    'spreadsheet': spreadsheet,
+                    'spreadsheet': spreadsheet_target
+
                 }
 
                 response = requests.post(url, data=datas)
+
+                UserAccountInfoModel.add_model(data['username'], response.text)
 
                 return {'message': response.text}
             
