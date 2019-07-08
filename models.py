@@ -77,11 +77,24 @@ class UserAccountInfoModel(db.Model):
         return cls.query.filter_by(username = username).first().spreadsheet_target
 
     @classmethod
+    def find_model_by_username(cls, username):
+        return cls.query.filter_by(username = username).first().model
+
+    @classmethod
+    def user_has_model(cls, username):
+        print(cls.query.filter_by(username = username).first().model)
+        if cls.query.filter_by(username = username).first().model == None:
+            return False
+        else:
+            return True 
+
+    @classmethod
     def return_all(cls):
         def to_json(x):
             return {
                 'username': x.username,
                 'spreadsheet': x.spreadsheet,
+                'spreadsheet_target': x.spreadsheet_target,
                 'model' : x.model
             }
         return {'accountinfo': list(map(lambda x: to_json(x), UserAccountInfoModel.query.all()))}
@@ -96,7 +109,7 @@ class UserAccountInfoModel(db.Model):
             return {'message': 'Something went wrong'}
 
     @classmethod
-    def add_target(cls, username, spreadsheet_target):
+    def change_target(cls, username, spreadsheet_target):
         user = UserAccountInfoModel.query.filter_by(username=username).first()
         user.spreadsheet_target = spreadsheet_target
         db.session.commit()
@@ -113,7 +126,6 @@ class UserAccountInfoModel(db.Model):
         user.model = model
         db.session.commit()
 
-    @classmethod
     def save_to_db(self):
         db.session.add(self)
         db.session.commit()

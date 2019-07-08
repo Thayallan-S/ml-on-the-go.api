@@ -103,6 +103,7 @@ class SecretResource(Resource):
 parser_b = reqparse.RequestParser()
 parser_b.add_argument('username', help = 'This field cannot be blank', required = True)
 parser_b.add_argument('spreadsheet', help = 'This field cannot be blank', required = True)
+parser_b.add_argument('spreadsheet_target', help = 'This field cannot be blank', required = True)
 
 class UserAddSpreadsheet(Resource):
     @jwt_required
@@ -113,18 +114,18 @@ class UserAddSpreadsheet(Resource):
             if UserAccountInfoModel.find_by_username(data['username']):
                 return {'message': 'User {} already has a spreadsheet'.format(data['username'])}
 
-            
-
             new_accountinfo = UserAccountInfoModel(
                 username = data['username'],
-                spreadsheet = data['spreadsheet']
+                spreadsheet = data['spreadsheet'],
+                spreadsheet_target = data['spreadsheet_target']
             )
 
             try:
                 new_accountinfo.save_to_db()
                 return {
-                    'message': 'Spreadsheet {} was added'.format(data['username']),
-                    'spreadsheet': data['spreadsheet']
+                    'message': 'Spreadsheet {} was added'.format(new_accountinfo.username),
+                    'spreadsheet': new_accountinfo.spreadsheet,
+                    'spreadsheet_target': new_accountinfo.spreadsheet_target
                     }
             except:
                 return {'message': 'Something went wrong'}, 500
@@ -157,32 +158,51 @@ class AllSpreadsheets(Resource):
     def delete(self):
         return UserAccountInfoModel.delete_all()
 
-parser_d = reqparse.RequestParser()
-parser_d.add_argument('username', help = 'This field cannot be blank', required = True)
+parser_c = reqparse.RequestParser()
+parser_c.add_argument('username', help = 'This field cannot be blank', required = True)
+parser_c.add_argument('ml_type', help = 'This field cannot be blank', required = True)
 
 class UserTrainModel(Resource):
     def post(self):
-        data = parser_d.parse_args()
+        data = parser_c.parse_args()
 
         spreadsheet = UserAccountInfoModel.find_spreadsheet_by_username(data['username'])
         spreadsheet_target = UserAccountInfoModel.find_target_by_username(data['username'])
 
-        if UserAccountInfoModel.find_by_username(data['username']):
+        model_type = data['ml_type']
+
+        if model_type == 'regression':
+            url = 'http://localhost:3000/linear'
+        else:
+            url = 'http://localhost:3000/logistic'
+
+        if UserAccountInfoModel.find_by_username(data['username']):    
             try:
-                url = 'http://localhost:3000/linearregression'
-
-                datas = {
-                    'username': data['username'],
-                    'spreadsheet': spreadsheet,
-                    'spreadsheet': spreadsheet_target
-
-                }
-
+                print(UserAccountInfoModel.user_has_model(data['username']))
+                if UserAccountInfoModel.user_has_model(data['username']):
+                    datas = {
+                        'username': data['username'],
+                        'spreadsheet': spreadsheet,
+                        'spreadsheet_target' : spreadsheet_target,
+                        'bucket_status' : 'old'
+                    }
+                else:
+                    print("sup")
+                    datas = {
+                        'username': data['username'],
+                        'spreadsheet': spreadsheet,
+                        'spreadsheet_target' : spreadsheet_target,
+                        'bucket_status' : 'new'
+                    }
+                
                 response = requests.post(url, data=datas)
 
-                UserAccountInfoModel.add_model(data['username'], response.text)
+                
+                response_message = response.json()
 
-                return {'message': response.text}
+                UserAccountInfoModel.add_model(data['username'], response_message['message'])
+
+                return {'message': response_message['message']}
             
             except:
                 return {'message': 'Something went wrong'}, 500
@@ -191,3 +211,40 @@ class UserTrainModel(Resource):
             return {'message': 'User doesnt exist'}
 
 
+parser_d = reqparse.RequestParser()
+parser_d.add_argument('username', help = 'This field cannot be blank', required = True)
+parser_d.add_argument('ml_type', help = 'Thid field cannot be blank', required = True)
+
+class UserPredictModel(Resource):
+    def post(self):
+        data = parser_d.parse_args()
+
+        model = UserAccountInfoModel.find_model_by_username(data['username'])
+        spreadsheet = UserAccountInfoModel.find_spreadsheet_by_username(data['username'])
+        spreadsheet_target = UserAccountInfoModel.find_target_by_username(data['username'])
+
+        ml_type = data['ml_type']
+
+        if UserAccountInfoModel.find_by_username(data['username']):
+            try:
+                if ml_type == 'regression':
+                    url = 'http://localhost:3000/predict/linear'
+                else:
+                    url = 'http://localhost:3000/predict/logistic'
+                
+                datas = {
+                    'username' : data['username'],
+                    'model' : model,
+                    'spreadsheet' : spreadsheet,
+                    'spreadsheet_target' : spreadsheet_target
+                }
+
+                response = requests.post(url, data=datas)
+                response_message = response.json()
+
+                return {'message' : response_message['message']}
+            except:
+                return {'message': 'Something went wrong'}, 500
+        
+        else:
+            return {'message' : 'User doesnt exist'}
